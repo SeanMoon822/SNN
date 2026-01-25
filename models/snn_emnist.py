@@ -23,16 +23,16 @@ class SNN_EMNIST(nn.Module):
         v_hid = None
 
         if self.coding == "rate":
-            spike_seq = rate_encode_flat(x, self.time_steps)
+            seq = rate_encode_flat(x, self.time_steps)
             for t in range(self.time_steps):
-                spikes, v_hid = self.lif(spike_seq[t], v_hid)
+                spikes, v_hid = self.lif(seq[t], v_hid)
                 I = self.readout(spikes)
                 v_out = v_out + (I - v_out) / self.tau_out
 
         elif self.coding == "ttfs":
-            spike_seq = ttfs_encode_flat(x, self.time_steps)
+            seq = ttfs_encode_flat(x, self.time_steps)
             for t in range(self.time_steps):
-                spikes, v_hid = self.lif(spike_seq[t], v_hid)
+                spikes, v_hid = self.lif(seq[t], v_hid)
                 I = self.readout(spikes)
                 v_out = v_out + (I - v_out) / self.tau_out
 
