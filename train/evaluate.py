@@ -1,3 +1,5 @@
+import torch
+
 def evaluate(model, loader, criterion, device):
     model.eval()
     correct, total, loss_sum = 0, 0, 0.0

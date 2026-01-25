@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from models.lif import LIFLayer
 from encoding.ttfs import ttfs_encode_flat
+from encoding.rate import rate_encode_flat
+
 
 class SNN_EMNIST(nn.Module):
     def __init__(self, time_steps=10, hidden_dim=256, num_classes=47,
@@ -21,9 +23,9 @@ class SNN_EMNIST(nn.Module):
         v_hid = None
 
         if self.coding == "rate":
-            x_flat = x.view(B, -1)
-            for _ in range(self.time_steps):
-                spikes, v_hid = self.lif(x_flat, v_hid)
+            spike_seq = rate_encode_flat(x, self.time_steps)
+            for t in range(self.time_steps):
+                spikes, v_hid = self.lif(spike_seq[t], v_hid)
                 I = self.readout(spikes)
                 v_out = v_out + (I - v_out) / self.tau_out
 
