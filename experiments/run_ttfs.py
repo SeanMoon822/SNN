@@ -41,6 +41,7 @@ def main():
     batch_size = 64
     learning_rate = 1e-3
     epochs = 24
+
     time_steps = 10
     hidden_dim = 256
     num_classes = 47
@@ -61,6 +62,8 @@ def main():
 
     best_val_acc = 0.0
     best_state = None
+
+    print("\nTraining SNN with coding = ttfs")
 
     for epoch in range(1, epochs + 1):
         train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, criterion, device)
