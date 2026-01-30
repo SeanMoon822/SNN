@@ -3,6 +3,7 @@ import torch.nn as nn
 from models.lif import LIFLayer
 from encoding.ttfs import ttfs_encode_flat
 from encoding.rate import rate_encode_flat
+from encoding.phase import phase_encode_flat
 
 
 class SNN_EMNIST(nn.Module):
@@ -31,6 +32,15 @@ class SNN_EMNIST(nn.Module):
 
         elif self.coding == "ttfs":
             seq = ttfs_encode_flat(x, self.time_steps)
+            for t in range(self.time_steps):
+                spikes, v_hid = self.lif(seq[t], v_hid)
+                I = self.readout(spikes)
+                v_out = v_out + (I - v_out) / self.tau_out
+
+        elif self.coding == "phase":
+            seq = phase_encode_flat(x, self.time_steps)
+            # print(seq.shape)  # should be [T, B, 784]
+            # print(seq.dtype)  # should be torch.float32
             for t in range(self.time_steps):
                 spikes, v_hid = self.lif(seq[t], v_hid)
                 I = self.readout(spikes)
