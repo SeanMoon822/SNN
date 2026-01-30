@@ -29,15 +29,15 @@ def get_emnist_loaders(batch_size=64, val_ratio=0.15, seed=42):
     train_set, val_set = random_split(full_train, [train_size, val_size], generator=generator)
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-    val_loader   = DataLoader(val_set,   batch_size=batch_size, shuffle=False)
-    test_loader  = DataLoader(test_set,  batch_size=batch_size, shuffle=False)
+    val_loader   = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+    test_loader  = DataLoader(test_set, batch_size=batch_size, shuffle=False)
     return train_loader, val_loader, test_loader
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using decvice: {device}")
 
-    # Hyperparams (match your notebook/script)
+    # Hyperparams 
     batch_size = 64
     learning_rate = 1e-3
     epochs = 24
