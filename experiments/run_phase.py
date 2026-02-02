@@ -53,7 +53,7 @@ def main():
         time_steps=time_steps,
         hidden_dim=hidden_dim,
         num_classes=num_classes,
-        coding="ttfs",
+        coding="phase",
         tau_out=tau_out
     ).to(device)
 
@@ -81,7 +81,7 @@ def main():
         model.to(device)
 
     test_loss, test_acc = evaluate(model, test_loader, criterion, device)
-    print(f"\n[RATE] Final Test Loss: {test_loss:.4f} | Final Test Acc: {test_acc*100:.2f}%")
+    print(f"\n[Phase] Final Test Loss: {test_loss:.4f} | Final Test Acc: {test_acc*100:.2f}%")
 
 
 if __name__ == "__main__":
