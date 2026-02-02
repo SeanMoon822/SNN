@@ -4,7 +4,7 @@ from models.lif import LIFLayer
 from encoding.ttfs import ttfs_encode_flat
 from encoding.rate import rate_encode_flat
 from encoding.phase import phase_encode_flat
-
+from encoding.burst import burst_encode_flat
 
 class SNN_EMNIST(nn.Module):
     def __init__(self, time_steps=10, hidden_dim=256, num_classes=47,
@@ -41,6 +41,13 @@ class SNN_EMNIST(nn.Module):
             seq = phase_encode_flat(x, self.time_steps)
             # print(seq.shape)  # should be [T, B, 784]
             # print(seq.dtype)  # should be torch.float32
+            for t in range(self.time_steps):
+                spikes, v_hid = self.lif(seq[t], v_hid)
+                I = self.readout(spikes)
+                v_out = v_out + (I - v_out) / self.tau_out
+
+        elif self.coding == "burst":
+            seq = phase_encode_flat(x,self.time_steps)
             for t in range(self.time_steps):
                 spikes, v_hid = self.lif(seq[t], v_hid)
                 I = self.readout(spikes)
