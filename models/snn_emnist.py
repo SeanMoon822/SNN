@@ -18,39 +18,42 @@ class SNN_EMNIST(nn.Module):
         self.readout = nn.Linear(hidden_dim, num_classes)
         self.tau_out = tau_out
 
-    def forward(self, x):
+    def forward(self, x, return_seq: bool = False):
         B = x.size(0)
-        v_out = torch.zeros(B, self.readout.out_features, device=x.device)
+        C = self.readout.out_features
+        v_out = torch.zeros(B, C, device=x.device)
         v_hid = None
+
+        # For metrics
+        v_out_seq = []
+        # total spikes over all timesteps & batch
+        spike_count = 0.0 
 
         if self.coding == "rate":
             seq = rate_encode_flat(x, self.time_steps)
-            for t in range(self.time_steps):
-                spikes, v_hid = self.lif(seq[t], v_hid)
-                I = self.readout(spikes)
-                v_out = v_out + (I - v_out) / self.tau_out
-
+        
         elif self.coding == "ttfs":
             seq = ttfs_encode_flat(x, self.time_steps)
-            for t in range(self.time_steps):
-                spikes, v_hid = self.lif(seq[t], v_hid)
-                I = self.readout(spikes)
-                v_out = v_out + (I - v_out) / self.tau_out
 
         elif self.coding == "phase":
             seq = phase_encode_flat(x, self.time_steps)
-            # print(seq.shape)  # should be [T, B, 784]
-            # print(seq.dtype)  # should be torch.float32
-            for t in range(self.time_steps):
-                spikes, v_hid = self.lif(seq[t], v_hid)
-                I = self.readout(spikes)
-                v_out = v_out + (I - v_out) / self.tau_out
 
         elif self.coding == "burst":
-            seq = phase_encode_flat(x,self.time_steps)
-            for t in range(self.time_steps):
+            seq = burst_encode_flat(x,self.time_steps)
+        else:
+            raise ValueError(f"Unknown coding scheme: {self.coding}")
+
+        for t in range(self.time_steps):
                 spikes, v_hid = self.lif(seq[t], v_hid)
+                spike_count += spikes.detach().sum()
                 I = self.readout(spikes)
                 v_out = v_out + (I - v_out) / self.tau_out
+                if return_seq:
+                    v_out_seq.append(v_out.detach())
 
+        if return_seq:
+                v_out_seq = torch.stack(v_out_seq, dim=0)  # [T, B, C]
+                return v_out, v_out_seq, spike_count
+
+    
         return v_out
