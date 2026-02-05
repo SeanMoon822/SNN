@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, random_split
 
 from models.snn_emnist import SNN_EMNIST
 from train.train_emnist import train_one_epoch
-from train.evaluate import evaluate
+from train.evaluate import evaluate, add_gaussian_noise, add_salt_pepper
 
 
 def get_emnist_loaders(batch_size=64, val_ratio=0.15, seed=42):
@@ -45,11 +45,17 @@ def get_emnist_loaders(batch_size=64, val_ratio=0.15, seed=42):
     return train_loader, val_loader, test_loader
 
 
+def metrics_to_str(m: dict) -> str:
+    return (f"Lat: {m['mean_latency_t']:.2f} | "
+            f"Spk/S: {m['spikes_per_sample']:.1f} | "
+            f"Thr: {m['throughput_sps']:.1f}")
+
+
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # Hyperparameters 
+    # Hyperparams 
     batch_size = 64
     learning_rate = 1e-3
     epochs = 24
@@ -66,7 +72,7 @@ def main():
         hidden_dim=hidden_dim,
         num_classes=num_classes,
         coding="rate",
-        tau_out=tau_out,
+        tau_out=tau_out
     ).to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -76,9 +82,14 @@ def main():
     best_state = None
 
     print("\nTraining SNN with coding = rate")
+
     for epoch in range(1, epochs + 1):
         train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, criterion, device)
-        val_loss, val_acc = evaluate(model, val_loader, criterion, device)
+        val_loss, val_acc, val_m = evaluate(
+            model, val_loader, criterion, device,
+            latency_margin=0.5, stable_k=2,
+            noise_fn=None,
+            return_latency_dist=False)
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
@@ -86,15 +97,47 @@ def main():
 
         print(f"[RATE] Epoch [{epoch}/{epochs}] "
               f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc*100:.2f}% "
-              f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}%")
+              f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}% |"
+              f"{metrics_to_str(val_m)}")
 
-    # Load best model based on validation accuracy
     if best_state is not None:
         model.load_state_dict(best_state)
         model.to(device)
 
-    test_loss, test_acc = evaluate(model, test_loader, criterion, device)
-    print(f"\n[RATE] Final Test Loss: {test_loss:.4f} | Final Test Acc: {test_acc*100:.2f}%")
+    # Clean test
+    test_loss, test_acc, test_m = evaluate(
+        model, test_loader, criterion, device,
+        latency_margin=0.5, stable_k=2,
+        noise_fn=None,
+        return_latency_dist=True)
+
+    print(f"\n[RATE] Final Test Loss: {test_loss:.4f} | Final Test Acc: {test_acc*100:.2f}% | "
+          f"{metrics_to_str(test_m)}")
+    if "median_latency_t" in test_m:
+        print(f"[RATE] Median Lat: {test_m['median_latency_t']:.2f} | "
+              f"Early Decision Rate: {test_m['early_decision_rate']*100:.2f}%")
+
+    # Robustness: Gaussian noise
+    print("\n[RATE] Robustness (Gaussian noise)")
+    for sigma in [0.05, 0.10, 0.20]:
+        _, acc_n, m_n = evaluate(
+            model, test_loader, criterion, device,
+            latency_margin=0.5, stable_k=2,
+            noise_fn=lambda x, s=sigma: add_gaussian_noise(x, s, clamp_min=-1.0, clamp_max=1.0),
+            return_latency_dist=False
+        )
+        print(f"  sigma={sigma:.2f} | acc={acc_n*100:.2f}% | drop={(test_acc-acc_n)*100:.2f}% | {metrics_to_str(m_n)}")
+
+    # Robustness: Salt & Pepper
+    print("\n[RATE] Robustness (Salt & Pepper)")
+    for p in [0.01, 0.05, 0.10]:
+        _, acc_n, m_n = evaluate(
+            model, test_loader, criterion, device,
+            latency_margin=0.5, stable_k=2,
+            noise_fn=lambda x, pp=p: add_salt_pepper(x, pp, low=-1.0, high=1.0),
+            return_latency_dist=False
+        )
+        print(f"  p={p:.2f} | acc={acc_n*100:.2f}% | drop={(test_acc-acc_n)*100:.2f}% | {metrics_to_str(m_n)}")
 
 
 if __name__ == "__main__":

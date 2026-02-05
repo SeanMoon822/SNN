@@ -1,5 +1,4 @@
 import time
-from typing import Callable, Optional, Dict, Any, Tuple
 import torch
 
 def decision_latency_from_seq(
@@ -50,7 +49,6 @@ def decision_latency_from_seq(
 def add_gaussian_noise(
     x: torch.Tensor,
     sigma: float,
-    *,
     clamp_min: float = -1.0,
     clamp_max: float = 1.0,
 ) -> torch.Tensor:
@@ -71,9 +69,9 @@ def add_salt_pepper(
     high: float = 1.0,
 ) -> torch.Tensor:
     """
-    Salt & pepper noise.
-
-    With probability p/2 set to low, with probability p/2 set to high.
+    Salt-and-pepper noise for robustness evaluation.
+    Models sparse, high-magnitude corruption such as dead or stuck pixels,
+    which strongly affects temporally sparse coding schemes.
     """
     rnd = torch.rand_like(x)
     x2 = x.clone()
@@ -93,7 +91,7 @@ def evaluate(
     *,
     latency_margin: float = 0.5,
     stable_k: int = 2,
-    noise_fn: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+    noise_fn = None,
     return_latency_dist: bool = False,
 ):
     """
@@ -158,7 +156,7 @@ def evaluate(
     avg_loss = loss_sum / max(total, 1)
     acc = correct / max(total, 1)
 
-    metrics: Dict[str, Any] = {
+    metrics = {
         "mean_latency_t": latency_sum / max(total, 1),
         "spikes_per_sample": spike_sum / max(total, 1),
         "throughput_sps": total / max((t1 - t0), 1e-9),
