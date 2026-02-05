@@ -60,16 +60,6 @@ To capture the characteristics of spiking computation, this project evaluates:
 
 ---
 
-## Repository Structure
-SNN/
-├── encoding/ # Neural coding schemes (rate, TTFS, phase, burst)
-├── models/ # LIF neurons and SNN model definition
-├── train/ # Training and evaluation code
-├── experiments/ # Scripts for running each coding scheme
-└── README.md
-
----
-
 ## Running the Experiments
 
 ### Requirements
@@ -81,13 +71,15 @@ Install dependencies:
 ```bash
 pip install torch torchvision
 
-- Run experiments from the repository root:
+
+### Run experiments from the repository root:
+
 python3 -m experiments.run_rate
 python3 -m experiments.run_ttfs
 python3 -m experiments.run_phase
 python3 -m experiments.run_burst
 
 
-- To save logs:
+### To save logs:
 python3 -m experiments.run_rate  > rate.txt
 python3 -m experiments.run_ttfs  > ttfs.txt
