@@ -13,7 +13,7 @@ def _to_unit_interval(x:torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
 
 def phase_encode_flat(x:torch.Tensor, time_steps: int, flatten: bool = True, 
                       invert: bool = False, threshold: float = 0.0,
-                      device: torch.device | None = None,
+                      device = None,
                       dtype: torch.dtype = torch.float32,
                       ) -> torch.Tensor:
     """

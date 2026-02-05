@@ -13,10 +13,10 @@ def _to_unit_interval(x: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
 def burst_encode_flat( 
     x: torch.Tensor,
     time_steps: int,
-    max_spikes: int | None = None,
+    max_spikes = None,
     threshold: float = 0.0,
     early: bool = True,
-    device: torch.device | None = None,
+    device = None,
     dtype: torch.dtype = torch.float32,
     ) -> torch.Tensor:
     """
