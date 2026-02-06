@@ -83,3 +83,13 @@ python3 -m experiments.run_burst
 ### To save logs:
 python3 -m experiments.run_rate  > rate.txt
 python3 -m experiments.run_ttfs  > ttfs.txt
+
+### To generate plots and heatmaps:
+Generate summary + heatmaps:
+```bash
+python3 -m experiments.run_all_and_analyze
+python3 -m experiments.plot_results
+---
+
+
+
